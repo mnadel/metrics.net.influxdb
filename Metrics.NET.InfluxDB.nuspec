@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/10/nuspec.xsd">
+    <metadata>
+        <id>Metrics.NET.InfluxDB</id>
+        <version>0.0.1</version>
+        <title>Metrics.NET.InfluxDB</title>
+        <authors>michael.nadel@gmail.com</authors>
+        <owners>michael.nadel@gmail.com</owners>
+        <projectUrl>https://github.com/mnadel/Metrics.NET.InfluxDB</projectUrl>
+        <requireLicenseAcceptance>false</requireLicenseAcceptance>
+        <description>This library provides a Report that pushes Metrics.NET data into InfluxDB 0.9+</description>
+        <copyright>Michael Nadel</copyright>
+        <dependencies>
+            <dependency id="Metrics.NET" version="0.2.16" />
+            <dependency id="Polly" version="2.2.3" />
+        </dependencies>
+    </metadata>
+    <files>
+      <file src="lib\net45\Metrics.NET.InfluxDB.dll" target="lib\net45\Metrics.NET.InfluxDB.dll" />
+      <file src="lib\net45\Metrics.NET.InfluxDB.pdb" target="lib\net45\Metrics.NET.InfluxDB.pdb" />
+      <file src="lib\net45\Metrics.NET.InfluxDB.XML" target="lib\net45\Metrics.NET.InfluxDB.XML" />      
+    </files>
+</package>
