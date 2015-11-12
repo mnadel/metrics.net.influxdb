@@ -16,8 +16,8 @@
         </dependencies>
     </metadata>
     <files>
-      <file src="lib\net45\Metrics.NET.InfluxDB.dll" target="lib\net45\Metrics.NET.InfluxDB.dll" />
-      <file src="lib\net45\Metrics.NET.InfluxDB.pdb" target="lib\net45\Metrics.NET.InfluxDB.pdb" />
-      <file src="lib\net45\Metrics.NET.InfluxDB.XML" target="lib\net45\Metrics.NET.InfluxDB.XML" />      
+      <file src="Metrics.NET.InfluxDB.dll" target="lib\net45\Metrics.NET.InfluxDB.dll" />
+      <file src="Metrics.NET.InfluxDB.pdb" target="lib\net45\Metrics.NET.InfluxDB.pdb" />
+      <file src="Metrics.NET.InfluxDB.XML" target="lib\net45\Metrics.NET.InfluxDB.XML" />      
     </files>
 </package>
