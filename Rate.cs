@@ -3,13 +3,13 @@ using Polly;
 
 namespace Metrics.NET.InfluxDB
 {
-    public class Rate
+    internal class Rate
     {
-        public int Events { get; private set; }
+        internal int Events { get; private set; }
 
-        public TimeSpan Period { get; private set; }
+        internal TimeSpan Period { get; private set; }
 
-        public Rate (int events, TimeSpan period)
+        internal Rate (int events, TimeSpan period)
         {
             Events = events;
             Period = period;
@@ -18,14 +18,14 @@ namespace Metrics.NET.InfluxDB
         /// <summary>
         /// Rate specification in the form of: <code>events / timeframe</code>
         /// </summary>
-        public Rate (string specification)
+        internal Rate (string specification)
         {
             var parts = specification.Split ('/');
             Events = int.Parse (parts [0].Trim ());
             Period = TimeSpan.Parse (parts [1].Trim ());
         }
 
-        public Policy AsPolicy ()
+        internal Policy AsPolicy ()
         {
             return Policy.Handle<Exception> ().CircuitBreaker (Events, Period);
         }

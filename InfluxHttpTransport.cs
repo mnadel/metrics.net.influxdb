@@ -8,13 +8,13 @@ using System.Net.Http.Headers;
 
 namespace Metrics.NET.InfluxDB
 {
-    public class InfluxDbHttpTransport
+    internal class InfluxDbHttpTransport
     {
         private readonly HttpClient _client;
         private readonly Policy _policy;
         private readonly Uri _uri;
 
-        public InfluxDbHttpTransport (Uri uri, string username, string password, string breakerRate = "3 / 00:00:30")
+        internal InfluxDbHttpTransport (Uri uri, string username, string password, string breakerRate = "3 / 00:00:30")
         {
             _uri = uri;
 
@@ -31,17 +31,17 @@ namespace Metrics.NET.InfluxDB
 
         internal void Send (IEnumerable<InfluxDbRecord> records)
         {
-            using (Metric.Context ("Metrics.NET").Timer ("influxdb.report", Unit.Calls).NewContext ()) {
+            using (Metric.Context ("Metrics.NET").Timer ("influxdb.report.timer", Unit.Calls).NewContext ()) {
                 _policy.Execute (() => {
                     var content = string.Join ("\n", records.Select (d => d.LineProtocol));
 
                     var task = _client.PostAsync (_uri, new StringContent (content));
 
                     task.ContinueWith (m => {
-                        if (m.Result.IsSuccessStatusCode) {
-                            Metric.Context ("Metrics.NET").Counter ("influxdb.report.success", Unit.Events).Increment ();
+                        if ((int)m.Result.StatusCode == 204) {
+                            Metric.Context ("Metrics.NET").Counter ("influxdb.success.count", Unit.Events).Increment ();
                         } else {
-                            Metric.Context ("Metrics.NET").Counter ("influxdb.report.fail", Unit.Events).Increment ();
+                            Metric.Context ("Metrics.NET").Counter ("influxdb.fail.count", Unit.Events).Increment ();
                             var response = m.Result.Content.ReadAsStringAsync ().Result;
                             throw new Exception (string.Format ("Error posting to [{0}] {1} {2}", _uri, m.Result.StatusCode, response)); 
                         }
