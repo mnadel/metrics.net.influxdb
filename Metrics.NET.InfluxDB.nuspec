@@ -15,9 +15,4 @@
             <dependency id="Polly" version="2.2.3" />
         </dependencies>
     </metadata>
-    <files>
-      <file src="Metrics.NET.InfluxDB.dll" target="lib\net45\Metrics.NET.InfluxDB.dll" />
-      <file src="Metrics.NET.InfluxDB.pdb" target="lib\net45\Metrics.NET.InfluxDB.pdb" />
-      <file src="Metrics.NET.InfluxDB.XML" target="lib\net45\Metrics.NET.InfluxDB.XML" />      
-    </files>
 </package>
