@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/10/nuspec.xsd">
     <metadata>
         <id>Metrics.NET.InfluxDB</id>
-        <version>0.0.1</version>
+        <version>$version$</version>
         <title>Metrics.NET.InfluxDB</title>
         <authors>michael.nadel@gmail.com</authors>
         <owners>michael.nadel@gmail.com</owners>
