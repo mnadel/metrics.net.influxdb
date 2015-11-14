@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace Metrics.NET.InfluxDB
 {
-    public class InfluxDbReport : BaseReport
+    internal class InfluxDbReport : BaseReport
     {
         private static readonly string[] GaugeColumns = { "Value" };
 
@@ -48,9 +48,9 @@ namespace Metrics.NET.InfluxDB
         private readonly InfluxDbHttpTransport _transport;
         private List<InfluxDbRecord> _data;
 
-        public InfluxDbReport (Uri influxdb, string username, string password)
+        internal InfluxDbReport (Uri influxdb, string username, string password, ConfigOptions config)
         {
-            this._transport = new InfluxDbHttpTransport (influxdb, username, password);
+            this._transport = new InfluxDbHttpTransport (influxdb, username, password, config.BreakerRate ?? "3 / 00:00:30");
         }
 
         private void Pack (string name, IEnumerable<string> columns, object value, MetricTags tags)

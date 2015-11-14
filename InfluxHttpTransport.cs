@@ -14,7 +14,7 @@ namespace Metrics.NET.InfluxDB
         private readonly Policy _policy;
         private readonly Uri _uri;
 
-        internal InfluxDbHttpTransport (Uri uri, string username, string password, string breakerRate = "3 / 00:00:30")
+        internal InfluxDbHttpTransport (Uri uri, string username, string password, string breakerRate)
         {
             _uri = uri;
 
