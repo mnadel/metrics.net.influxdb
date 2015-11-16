@@ -21,10 +21,8 @@ One noteworthy configuration affects the behavior of this Reporter: `BreakerRate
 
 ## BreakerRate
 
-This configures a [circuit breaker](https://github.com/michael-wolfenden/Polly) that protects your InfluxDB endpoint. This configuration specifies the number of allowed errors in the specified timeframe.
+This configures a [circuit breaker](https://github.com/michael-wolfenden/Polly) that protects your InfluxDB endpoint. This configuration specifies the number of allowed errors, and a "cool-down" period where no additional requests will be made to the InfluxDB endpoint.
 
 The rate is expressed as: `# of events / timeframe` where `# of events` is an integer, and `timeframe` is a string that can be parsed by `TimeSpan.Parse()`.
 
-So, for example, `2 / 00:00:15` would trip the circuit if two errors occur within fifteen seconds.
-
-Once the circuit is tripped, additional posts to InfluxDB will be suspended until the timeframe passes.
+So, for example, `2 / 00:00:15` would trip the circuit if two errors occur, and then will wait fifteen seconds before allowing additional requests to InfluxDB.
