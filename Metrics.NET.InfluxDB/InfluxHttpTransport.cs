@@ -5,18 +5,25 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Net.Http.Headers;
+using System.Threading;
+using System.Threading.Tasks;
+using Metrics.Logging;
 
 namespace Metrics.NET.InfluxDB
 {
     internal class InfluxDbHttpTransport
     {
+        private static readonly ILog log = LogProvider.GetCurrentClassLogger();
+
         private readonly HttpClient _client;
         private readonly Policy _policy;
         private readonly Uri _uri;
+        private readonly ConfigOptions _config;
 
-        internal InfluxDbHttpTransport (Uri uri, string username, string password, string breakerRate)
+        internal InfluxDbHttpTransport (Uri uri, string username, string password, ConfigOptions config)
         {
             _uri = uri;
+            _config = config;
 
             var byteArray = Encoding.ASCII.GetBytes (string.Format ("{0}:{1}", username, password));
 
@@ -26,28 +33,50 @@ namespace Metrics.NET.InfluxDB
                 }
             };
 
-            _policy = new Rate (breakerRate).AsPolicy ();
+            _policy = new Rate (_config.BreakerRate).AsPolicy ();
         }
 
         internal void Send (IEnumerable<InfluxDbRecord> records)
         {
-            using (Metric.Context ("Metrics.NET").Timer ("influxdb.report.timer", Unit.Calls).NewContext ()) {
-                _policy.Execute (() => {
-                    var content = string.Join ("\n", records.Select (d => d.LineProtocol));
+            _policy.ExecuteAndCapture (() => {
+                var content = string.Join ("\n", records.Select (d => d.LineProtocol));
 
-                    var task = _client.PostAsync (_uri, new StringContent (content));
+                var cts = new CancellationTokenSource();
 
-                    task.ContinueWith (m => {
-                        if ((int)m.Result.StatusCode == 204) {
-                            Metric.Context ("Metrics.NET").Counter ("influxdb.success.count", Unit.Events).Increment ();
+                try {
+                    Metric.Context ("Metrics.NET").Meter ("influxdb.post.meter", Unit.Events).Mark ();
+
+                    var task = _client.PostAsync (_uri, new StringContent (content), cts.Token);
+
+                    if (task.Wait (TimeSpan.FromMilliseconds (_config.HttpTimeoutMillis))) {
+                        if ((int)task.Result.StatusCode == 204) {
+                            Metric.Context ("Metrics.NET").Meter ("influxdb.success.meter", Unit.Events).Mark ();
                         } else {
-                            Metric.Context ("Metrics.NET").Counter ("influxdb.fail.count", Unit.Events).Increment ();
-                            var response = m.Result.Content.ReadAsStringAsync ().Result;
-                            throw new Exception (string.Format ("Error posting to [{0}] {1} {2}", _uri, m.Result.StatusCode, response)); 
+                            Metric.Context ("Metrics.NET").Meter ("influxdb.fail.meter", Unit.Events).Mark ();
+                            var response = task.Result.Content.ReadAsStringAsync ().Result;
+                            throw new Exception (string.Format ("Error posting to [{0}] {1} {2}", _uri, task.Result.StatusCode, response)); 
                         }
-                    });
-                });
-            }
+                    } else {
+                        cts.Cancel ();
+                        Metric.Context ("Metrics.NET").Meter ("influxdb.timeout.meter", Unit.Events).Mark ();
+                        throw new TimeoutException (string.Format("Timed out after {0}ms posting to {1}", _config.HttpTimeoutMillis, _uri)); 
+                    }
+                }
+                catch (Exception e)
+                {
+                    cts.Cancel ();
+                    Metric.Context ("Metrics.NET").Meter ("influxdb.error.meter", Unit.Events).Mark ();
+
+                    var agg = e as AggregateException;
+                    if (agg != null) {
+                        log.ErrorException (agg.InnerException.Message, agg.InnerException);
+                    } else {
+                        log.ErrorException (e.InnerException.Message, e.InnerException);
+                    }
+
+                    throw e;
+                }
+            });
         }
     }
 }

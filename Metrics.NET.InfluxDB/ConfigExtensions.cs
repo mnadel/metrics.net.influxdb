@@ -14,13 +14,11 @@ namespace Metrics.NET.InfluxDB
         /// </summary>
         public static MetricsReports WithInflux (this MetricsReports reports, string host, int port, string user, string pass, string database, TimeSpan interval, ConfigOptions config = null)
         {
-            var uri = string.Format (@"{0}://{1}:{2}/write?db={3}", config != null && config.UseHttps ? "https" : "http", host, port, database);
-            if (config != null && !string.IsNullOrEmpty (config.UrlParams ()))
-            {
-                uri = uri + "&" + config.UrlParams ();
-            }
+            var cfg = config ?? new ConfigOptions ();
 
-            return reports.WithInflux (new Uri (uri), user, pass, interval, config);
+            var uri = cfg.BuildUri (host, port, database);
+
+            return reports.WithInflux (uri, user, pass, interval, cfg);
         }
 
         /// <summary>
@@ -64,16 +62,26 @@ namespace Metrics.NET.InfluxDB
         public string BreakerRate { get; set; }
 
         /// <summary>
+        /// Gets or sets the http timeout in milliseconds
+        /// </summary>
+        /// <value>The http timeout.</value>
+        public int HttpTimeoutMillis { get; set; }
+
+        /// <summary>
         /// Instantiate a new config object
         /// </summary>
         public ConfigOptions()
         {
             BreakerRate = "3 / 00:00:30";
+            HttpTimeoutMillis = 5000;
         }
 
-        internal string UrlParams()
+        internal Uri BuildUri(string host, int port, string database)
         {
-            var parameters = new List<string>();
+            var parameters = new List<string> 
+            {
+                "db="+database    
+            };
 
             if (!string.IsNullOrEmpty (RetentionPolicy)) {
                 parameters.Add ("rp="+RetentionPolicy);                
@@ -83,7 +91,9 @@ namespace Metrics.NET.InfluxDB
                 parameters.Add ("consistency="+Consistency);                
             }
 
-            return string.Join ("&", parameters);
+            var queryStringParams = string.Join ("&", parameters);
+
+            return new Uri(string.Format (@"{0}://{1}:{2}/write?{3}", UseHttps ? "https" : "http", host, port, queryStringParams));
         }
     }
 }

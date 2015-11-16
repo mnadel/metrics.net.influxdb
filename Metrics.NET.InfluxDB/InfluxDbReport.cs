@@ -50,7 +50,7 @@ namespace Metrics.NET.InfluxDB
 
         internal InfluxDbReport (Uri influxdb, string username, string password, ConfigOptions config)
         {
-            this._transport = new InfluxDbHttpTransport (influxdb, username, password, config.BreakerRate ?? "3 / 00:00:30");
+            this._transport = new InfluxDbHttpTransport (influxdb, username, password, config);
         }
 
         private void Pack (string name, IEnumerable<string> columns, object value, MetricTags tags)
