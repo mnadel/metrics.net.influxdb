@@ -27,6 +27,7 @@ namespace Metrics.NET.InfluxDB
             {typeof(float), _decimalFormatter},
             {typeof(double), _decimalFormatter},
             {typeof(decimal), _decimalFormatter},
+            {typeof(bool), i => i.ToString ().ToLower ()}
         };
 
         public string LineProtocol { get; private set; }
@@ -50,7 +51,7 @@ namespace Metrics.NET.InfluxDB
             var fieldKeypairs = new List<string> ();
 
             foreach (var pair in columns.Zip(data, (col, dat) => new { col, dat })) {
-                fieldKeypairs.Add (string.Format ("{0}={1}", Escape (pair.col), Stringify(pair.dat)));
+                fieldKeypairs.Add (string.Format ("{0}={1}", Escape (pair.col), StringifyValue(pair.dat)));
             }
 
             record.Append (string.Join (",", fieldKeypairs));
@@ -85,7 +86,7 @@ namespace Metrics.NET.InfluxDB
         /// See: https://docs.influxdata.com/influxdb/v0.9/write_protocols/line/
         /// </summary>
         /// <param name="val">InfluxDB value</param>
-        public static string Stringify (object val)
+        public static string StringifyValue (object val)
         {
             if (val == null) {
                 return null;
@@ -95,10 +96,15 @@ namespace Metrics.NET.InfluxDB
 
             if (_typeFormatters.ContainsKey (t)) {
                 return _typeFormatters [t] (val);
+            } else if (t == typeof(string) 
+                && (string.Equals (val.ToString (), "true", StringComparison.InvariantCultureIgnoreCase)
+                    || string.Equals (val.ToString (), "false", StringComparison.InvariantCultureIgnoreCase))) {
+                return val.ToString ().ToLower ();
+            } else if (t == typeof(string)) {
+                return string.Format ("\"{0}\"", val.ToString ().Replace ("\"", "\\\""));
             }
 
             return val.ToString ();
         }
     }
 }
-
