@@ -1,2 +1,8 @@
 language: csharp
 solution: Metrics.NET.InfluxDB.sln
+before_install:
+  - sudo apt-get install nunit-console
+before_script:
+  - nuget restore Metrics.NET.InfluxDB.sln
+after_script:
+  - nunit-console Metrics.NET.InfluxDB.Tests/bin/Release/Metrics.NET.InfluxDB.Tests.dll

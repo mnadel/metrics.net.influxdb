@@ -10,11 +10,11 @@ namespace Metrics.NET.InfluxDB
 {
     public class InfluxDbRecord
     {
-        private static readonly Func<object, string> _integerFormatter = 
-            i => string.Format (CultureInfo.CreateSpecificCulture ("en-US"), "{0:G}i", i);
+        private static readonly CultureInfo _cultureEnUs = CultureInfo.CreateSpecificCulture ("en-US");
 
-        private static readonly Func<object, string> _decimalFormatter = 
-            i => string.Format (CultureInfo.CreateSpecificCulture ("en-US"), "{0:G}", i);
+        private static readonly Func<object, string> _integerFormatter = i => string.Format (_cultureEnUs, "{0:G}i", i);
+
+        private static readonly Func<object, string> _decimalFormatter = i => string.Format (_cultureEnUs, "{0:G}", i);
 
         private static readonly IDictionary<Type, Func<object, string>> _typeFormatters = new Dictionary<Type, Func<object, string>>
         {
@@ -78,6 +78,7 @@ namespace Metrics.NET.InfluxDB
 
         private static string Escape (string v)
         {
+            // spaces, commas, and equals signs are escaped
             return v.Replace (" ", "\\ ").Replace (",", "\\,").Replace ("=", "\\=");
         }
 
@@ -101,6 +102,7 @@ namespace Metrics.NET.InfluxDB
                     || string.Equals (val.ToString (), "false", StringComparison.InvariantCultureIgnoreCase))) {
                 return val.ToString ().ToLower ();
             } else if (t == typeof(string)) {
+                // surrounded by quoutes and escaped double quotes
                 return string.Format ("\"{0}\"", val.ToString ().Replace ("\"", "\\\""));
             }
 
