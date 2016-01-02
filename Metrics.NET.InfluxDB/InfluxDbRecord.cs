@@ -3,11 +3,32 @@ using System.Linq;
 using System.Collections.Generic;
 using System;
 using System.Diagnostics;
+using System.Globalization;
+using Metrics.Reporters;
 
 namespace Metrics.NET.InfluxDB
 {
-    internal class InfluxDbRecord
+    public class InfluxDbRecord
     {
+        private static readonly Func<object, string> _integerFormatter = 
+            i => string.Format (CultureInfo.CreateSpecificCulture ("en-US"), "{0:G}i", i);
+
+        private static readonly Func<object, string> _decimalFormatter = 
+            i => string.Format (CultureInfo.CreateSpecificCulture ("en-US"), "{0:G}", i);
+
+        private static readonly IDictionary<Type, Func<object, string>> _typeFormatters = new Dictionary<Type, Func<object, string>>
+        {
+            {typeof(short), _integerFormatter},
+            {typeof(ushort), _integerFormatter},
+            {typeof(int), _integerFormatter},
+            {typeof(uint), _integerFormatter},
+            {typeof(long), _integerFormatter},
+            {typeof(ulong), _integerFormatter},
+            {typeof(float), _decimalFormatter},
+            {typeof(double), _decimalFormatter},
+            {typeof(decimal), _decimalFormatter},
+        };
+
         public string LineProtocol { get; private set; }
 
         internal InfluxDbRecord (string name, IEnumerable<string> columns, IEnumerable<object> data, MetricTags tags)
@@ -29,7 +50,7 @@ namespace Metrics.NET.InfluxDB
             var fieldKeypairs = new List<string> ();
 
             foreach (var pair in columns.Zip(data, (col, dat) => new { col, dat })) {
-                fieldKeypairs.Add (string.Format ("{0}={1}", Escape (pair.col), pair.dat));
+                fieldKeypairs.Add (string.Format ("{0}={1}", Escape (pair.col), Stringify(pair.dat)));
             }
 
             record.Append (string.Join (",", fieldKeypairs));
@@ -57,6 +78,26 @@ namespace Metrics.NET.InfluxDB
         private static string Escape (string v)
         {
             return v.Replace (" ", "\\ ").Replace (",", "\\,").Replace ("=", "\\=");
+        }
+
+        /// <summary>
+        /// Return the value as an InfluxDB-parseable string. 
+        /// See: https://docs.influxdata.com/influxdb/v0.9/write_protocols/line/
+        /// </summary>
+        /// <param name="val">InfluxDB value</param>
+        public static string Stringify (object val)
+        {
+            if (val == null) {
+                return null;
+            }
+
+            var t = val.GetType ();
+
+            if (_typeFormatters.ContainsKey (t)) {
+                return _typeFormatters [t] (val);
+            }
+
+            return val.ToString ();
         }
     }
 }
