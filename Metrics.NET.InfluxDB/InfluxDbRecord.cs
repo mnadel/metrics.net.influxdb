@@ -4,10 +4,12 @@ using System.Collections.Generic;
 using System;
 using System.Diagnostics;
 using System.Globalization;
-using Metrics.Reporters;
 
 namespace Metrics.NET.InfluxDB
 {
+    /// <summary>
+    /// Influx db record. See: https://influxdb.com/docs/v0.9/write_protocols/write_syntax.html
+    /// </summary>
     public class InfluxDbRecord
     {
         private static readonly CultureInfo _cultureEnUs = CultureInfo.CreateSpecificCulture ("en-US");
@@ -30,23 +32,31 @@ namespace Metrics.NET.InfluxDB
             {typeof(bool), i => i.ToString ().ToLower ()}
         };
 
+        /// <summary>
+        /// The line protocol for a measurement(s)
+        /// </summary>
+        /// <value>The line protocol.</value>
         public string LineProtocol { get; private set; }
 
-        internal InfluxDbRecord (string name, IEnumerable<string> columns, IEnumerable<object> data, MetricTags tags)
+        private readonly ConfigOptions _config;
+
+        internal InfluxDbRecord (ConfigOptions config)
         {
-            // see: https://influxdb.com/docs/v0.9/write_protocols/write_syntax.html
+            _config = config;
+        }
 
-            var record = new StringBuilder ();
-            record.Append (Escape (name));
+        internal InfluxDbRecord (string name, object data, MetricTags tags, ConfigOptions config, Tuple<string, string>[] moreTags = null) : this(config)
+        {
+            var record = BuildRecordPreamble (name, tags, moreTags);
 
-            var allTags = GetAllTags (tags);
-            if (allTags.Any ()) 
-            {
-                record.Append (",");
-                record.Append (string.Join(",", allTags.Select (t => string.Format ("{0}={1}", Escape(t.Item1), Escape(t.Item2)))));
-            }
+            record.Append ("value=").Append (StringifyValue (data));
 
-            record.Append (" ");
+            LineProtocol = record.ToString ();        
+        }
+
+        internal InfluxDbRecord (string name, IEnumerable<string> columns, IEnumerable<object> data, MetricTags tags, ConfigOptions config, Tuple<string, string>[] moreTags = null) : this(config)
+        {
+            var record = BuildRecordPreamble (name, tags, moreTags);
 
             var fieldKeypairs = new List<string> ();
 
@@ -59,12 +69,34 @@ namespace Metrics.NET.InfluxDB
             LineProtocol = record.ToString ();
         }
 
+        internal StringBuilder BuildRecordPreamble(string name, MetricTags tags, Tuple<string, string>[] moreTags = null)
+        {
+            var record = new StringBuilder ();
+            record.Append (Escape (_config.MetricNameConverter (name)));
+
+            var allTags = GetAllTags (tags);
+
+            if (moreTags != null && moreTags.Length > 0) {
+                allTags = allTags.Union (moreTags);
+            }
+
+            if (allTags.Any ()) 
+            {
+                record.Append (",");
+                record.Append (string.Join(",", allTags.Select (t => string.Format ("{0}={1}", Escape(t.Item1), Escape(t.Item2)))));
+            }
+
+            record.Append (" ");
+
+            return record;
+        }
+
         internal IEnumerable<Tuple<string, string>> GetAllTags(MetricTags tags)
         {
             var allTags = new List<Tuple<string, string>> 
             {
-                new Tuple<string, string>("host", Environment.MachineName),
-                new Tuple<string, string>("user", Environment.UserName),
+                new Tuple<string, string>("host", Environment.MachineName.ToLower ()),
+                new Tuple<string, string>("user", Environment.UserName.ToLower ()),
                 new Tuple<string, string>("pid", Process.GetCurrentProcess ().Id.ToString ()),
             };
 

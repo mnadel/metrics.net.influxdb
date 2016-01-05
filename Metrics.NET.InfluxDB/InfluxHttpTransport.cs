@@ -38,6 +38,12 @@ namespace Metrics.NET.InfluxDB
 
         internal void Send (IEnumerable<InfluxDbRecord> records)
         {
+            if (_config.Verbose) {
+                foreach (var rec in records) {
+                    log.DebugFormat ("posting: {0}", rec.LineProtocol);
+                }
+            }
+
             _policy.ExecuteAndCapture (() => {
                 var content = string.Join ("\n", records.Select (d => d.LineProtocol));
 

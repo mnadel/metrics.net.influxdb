@@ -1,6 +1,9 @@
 ﻿using System;
 using Metrics.Reports;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
+using System.Dynamic;
+using System.Configuration;
 
 namespace Metrics.NET.InfluxDB
 {
@@ -35,6 +38,18 @@ namespace Metrics.NET.InfluxDB
     /// </summary>
     public class ConfigOptions
     {
+        private static readonly Regex NonWord = new Regex("[^a-zA-Z0-9\\.]+");
+            
+        public static readonly Func<string, string> IdentityConverter = name => name;
+
+        public static readonly Func<string, string> CompactConverter = name => {
+            if (name.StartsWith ("[", StringComparison.InvariantCultureIgnoreCase)) {
+                name = name.Substring (1);
+            }
+
+            return NonWord.Replace (name, ".").ToLower ();
+        };
+
         /// <summary>
         /// Set whether or not to use SSL when posting data to InfluxDB
         /// </summary>
@@ -68,12 +83,24 @@ namespace Metrics.NET.InfluxDB
         public int HttpTimeoutMillis { get; set; }
 
         /// <summary>
+        /// Provide converter that takes a Metrics.NET name name returns the name that is sent to InfluxDB
+        /// </summary>
+        /// <value>The metric name converter.</value>
+        public Func<string, string> MetricNameConverter { get; set; }
+
+        /// <summary>
+        /// Enable InfluxDB integration debug-level output
+        /// </summary>
+        public bool Verbose { get; set; }
+
+        /// <summary>
         /// Instantiate a new config object
         /// </summary>
         public ConfigOptions()
         {
             BreakerRate = "3 / 00:00:30";
             HttpTimeoutMillis = 5000;
+            MetricNameConverter = IdentityConverter;
         }
 
         internal Uri BuildUri(string host, int port, string database)

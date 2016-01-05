@@ -36,7 +36,7 @@
       <HintPath>..\packages\Metrics.NET.0.2.16\lib\net45\Metrics.dll</HintPath>
     </Reference>
     <Reference Include="Polly">
-      <HintPath>..\packages\Polly.2.2.3\lib\net45\Polly.dll</HintPath>
+      <HintPath>..\packages\Polly.2.2.7\lib\net45\Polly.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>

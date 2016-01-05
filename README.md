@@ -6,6 +6,10 @@
 
 Available on [NuGet.org](https://www.nuget.org/packages/Metrics.NET.InfluxDB/) as [Metrics.NET.InfluxDB](https://www.nuget.org/packages/Metrics.NET.InfluxDB/).
 
+# Changelog
+
+This version has significant *(i.e. breaking)* changes from the previous version. Most derived metrics (min, max, mean, percentiles, etc.) are no longer being exported. InfluxDB recommended using, instead, [continuous queries](https://influxdb.com/docs/v0.9/query_language/continuous_queries.html) on the backend to calculate these values.
+
 # Usage
 
 Nearly identical to the usage shown in the [Metrics.NET Wiki](https://github.com/etishor/Metrics.NET/wiki/InfluxDb), but using `WithInflux` instead of `WithInfluxDb`:
@@ -26,3 +30,15 @@ This configures a [circuit breaker](https://github.com/michael-wolfenden/Polly) 
 The rate is expressed as: `# of events / timeframe` where `# of events` is an integer, and `timeframe` is a string that can be parsed by `TimeSpan.Parse()`.
 
 So, for example, `2 / 00:00:15` would trip the circuit if two errors occur, and then will wait fifteen seconds before allowing additional requests to InfluxDB.
+
+## MetricNameConverter
+
+This is a transformer that accepts a metric name as reported by Metrics.NET and returns the name that will be reported to InfluxDB.
+
+The default is `ConfigOptions.IdentityConverter` which returns the name as-is.
+
+Also included is `ConfigOptions.CompactConverter` which replaces runs of non-alpha characters with a period.
+
+Example:
+
+    [mono-sgen - Metrics.NET] influxdb.success.meter -> mono.sgen.metrics.net.influxdb.success.meter
