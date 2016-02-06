@@ -42,3 +42,11 @@ Also included is `ConfigOptions.CompactConverter` which replaces runs of non-alp
 Example:
 
     [mono-sgen - Metrics.NET] influxdb.success.meter -> mono.sgen.metrics.net.influxdb.success.meter
+
+## License
+
+This library will always keep the same license as [Metrics.NET](https://github.com/etishor/Metrics.NET) (as long as its an open source, permisive license). This port is inspired by and contains some code from [Metrics.NET](https://github.com/etishor/Metrics.NET).
+
+This library (Metrics.NET.InfluxDB) is release under Apache 2.0 License (see LICENSE).
+
+Copyright (c) 2016 Michael Nadel
