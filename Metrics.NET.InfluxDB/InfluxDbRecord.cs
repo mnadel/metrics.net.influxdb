@@ -12,11 +12,11 @@ namespace Metrics.NET.InfluxDB
     /// </summary>
     public class InfluxDbRecord
     {
-        private static readonly CultureInfo _cultureEnUs = CultureInfo.CreateSpecificCulture ("en-US");
+        private static readonly CultureInfo _cultureEnUs = CultureInfo.CreateSpecificCulture("en-US");
 
-        private static readonly Func<object, string> _integerFormatter = i => string.Format (_cultureEnUs, "{0:G}i", i);
+        private static readonly Func<object, string> _integerFormatter = i => string.Format(_cultureEnUs, "{0:G}i", i);
 
-        private static readonly Func<object, string> _decimalFormatter = i => string.Format (_cultureEnUs, "{0:G}", i);
+        private static readonly Func<object, string> _decimalFormatter = i => string.Format(_cultureEnUs, "{0:G}", i);
 
         private static readonly IDictionary<Type, Func<object, string>> _typeFormatters = new Dictionary<Type, Func<object, string>>
         {
@@ -40,53 +40,57 @@ namespace Metrics.NET.InfluxDB
 
         private readonly ConfigOptions _config;
 
-        internal InfluxDbRecord (ConfigOptions config)
+        internal InfluxDbRecord(ConfigOptions config)
         {
             _config = config;
         }
 
-        internal InfluxDbRecord (string name, object data, MetricTags tags, ConfigOptions config, Tuple<string, string>[] moreTags = null) : this(config)
+        internal InfluxDbRecord(string name, object data, MetricTags tags, ConfigOptions config, Tuple<string, string>[] moreTags = null)
+            : this(config)
         {
-            var record = BuildRecordPreamble (name, tags, moreTags);
+            var record = BuildRecordPreamble(name, tags, moreTags);
 
-            record.Append ("value=").Append (StringifyValue (data));
+            record.Append("value=").Append(StringifyValue(data));
 
-            LineProtocol = record.ToString ();        
+            LineProtocol = record.ToString();
         }
 
-        internal InfluxDbRecord (string name, IEnumerable<string> columns, IEnumerable<object> data, MetricTags tags, ConfigOptions config, Tuple<string, string>[] moreTags = null) : this(config)
+        internal InfluxDbRecord(string name, IEnumerable<string> columns, IEnumerable<object> data, MetricTags tags, ConfigOptions config, Tuple<string, string>[] moreTags = null)
+            : this(config)
         {
-            var record = BuildRecordPreamble (name, tags, moreTags);
+            var record = BuildRecordPreamble(name, tags, moreTags);
 
-            var fieldKeypairs = new List<string> ();
+            var fieldKeypairs = new List<string>();
 
-            foreach (var pair in columns.Zip(data, (col, dat) => new { col, dat })) {
-                fieldKeypairs.Add (string.Format ("{0}={1}", Escape (pair.col), StringifyValue(pair.dat)));
+            foreach (var pair in columns.Zip(data, (col, dat) => new { col, dat }))
+            {
+                fieldKeypairs.Add(string.Format("{0}={1}", Escape(pair.col), StringifyValue(pair.dat)));
             }
 
-            record.Append (string.Join (",", fieldKeypairs));
+            record.Append(string.Join(",", fieldKeypairs));
 
-            LineProtocol = record.ToString ();
+            LineProtocol = record.ToString();
         }
 
         internal StringBuilder BuildRecordPreamble(string name, MetricTags tags, Tuple<string, string>[] moreTags = null)
         {
-            var record = new StringBuilder ();
-            record.Append (Escape (_config.MetricNameConverter (name)));
+            var record = new StringBuilder();
+            record.Append(Escape(_config.MetricNameConverter(name)));
 
-            var allTags = GetAllTags (tags);
+            var allTags = GetAllTags(tags);
 
-            if (moreTags != null && moreTags.Length > 0) {
-                allTags = allTags.Union (moreTags);
-            }
-
-            if (allTags.Any ()) 
+            if (moreTags != null && moreTags.Length > 0)
             {
-                record.Append (",");
-                record.Append (string.Join(",", allTags.Select (t => string.Format ("{0}={1}", Escape(t.Item1), Escape(t.Item2)))));
+                allTags = allTags.Union(moreTags);
             }
 
-            record.Append (" ");
+            if (allTags.Any())
+            {
+                record.Append(",");
+                record.Append(string.Join(",", allTags.Select(t => string.Format("{0}={1}", Escape(t.Item1), Escape(t.Item2)))));
+            }
+
+            record.Append(" ");
 
             return record;
         }
@@ -100,18 +104,18 @@ namespace Metrics.NET.InfluxDB
                 new Tuple<string, string>("pid", Process.GetCurrentProcess ().Id.ToString ()),
             };
 
-            if (tags.Tags != null && tags.Tags.Length > 0) 
+            if (tags.Tags != null && tags.Tags.Length > 0)
             {
-                allTags.AddRange (tags.Tags.Select (t => new Tuple<string, string>(Escape(t), "true")));
+                allTags.AddRange(tags.Tags.Select(t => new Tuple<string, string>(Escape(t), "true")));
             }
 
             return allTags;
         }
 
-        private static string Escape (string v)
+        private static string Escape(string v)
         {
             // spaces, commas, and equals signs are escaped
-            return v.Replace (" ", "\\ ").Replace (",", "\\,").Replace ("=", "\\=");
+            return v.Replace(" ", "\\ ").Replace(",", "\\,").Replace("=", "\\=");
         }
 
         /// <summary>
@@ -119,26 +123,32 @@ namespace Metrics.NET.InfluxDB
         /// See: https://docs.influxdata.com/influxdb/v0.9/write_protocols/line/
         /// </summary>
         /// <param name="val">InfluxDB value</param>
-        public static string StringifyValue (object val)
+        public static string StringifyValue(object val)
         {
-            if (val == null) {
+            if (val == null)
+            {
                 return null;
             }
 
-            var t = val.GetType ();
+            var t = val.GetType();
 
-            if (_typeFormatters.ContainsKey (t)) {
-                return _typeFormatters [t] (val);
-            } else if (t == typeof(string) 
-                && (string.Equals (val.ToString (), "true", StringComparison.InvariantCultureIgnoreCase)
-                    || string.Equals (val.ToString (), "false", StringComparison.InvariantCultureIgnoreCase))) {
-                return val.ToString ().ToLower ();
-            } else if (t == typeof(string)) {
+            if (_typeFormatters.ContainsKey(t))
+            {
+                return _typeFormatters[t](val);
+            }
+            else if (t == typeof(string)
+              && (string.Equals(val.ToString(), "true", StringComparison.InvariantCultureIgnoreCase)
+                  || string.Equals(val.ToString(), "false", StringComparison.InvariantCultureIgnoreCase)))
+            {
+                return val.ToString().ToLower();
+            }
+            else if (t == typeof(string))
+            {
                 // surrounded by quoutes and escaped double quotes
-                return string.Format ("\"{0}\"", val.ToString ().Replace ("\"", "\\\""));
+                return string.Format("\"{0}\"", val.ToString().Replace("\"", "\\\""));
             }
 
-            return val.ToString ();
+            return val.ToString();
         }
     }
 }

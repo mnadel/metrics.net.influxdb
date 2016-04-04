@@ -8,116 +8,147 @@ namespace Metrics.NET.InfluxDB
     internal class InfluxDbReport : BaseReport
     {
         private readonly InfluxDbHttpTransport _transport;
+        private readonly ConfigOptions _config;
         private List<InfluxDbRecord> _data;
-        private ConfigOptions _config;
 
-        internal InfluxDbReport (Uri influxdb, string username, string password, ConfigOptions config)
+        internal InfluxDbReport(Uri influxdb, string username, string password, ConfigOptions config)
         {
-            this._transport = new InfluxDbHttpTransport (influxdb, username, password, config);
-            this._config = config;
+            _transport = new InfluxDbHttpTransport(influxdb, username, password, config);
+            _config = config;
         }
 
-        private void Pack (string name, object value, MetricTags tags)
+        private void Pack(string name, object value, MetricTags tags)
         {
-            this._data.Add (new InfluxDbRecord (name, value, tags, _config));
+            _data.Add(new InfluxDbRecord(name, value, tags, _config));
         }
 
-        private void Pack (string name, IEnumerable<string> columns, IEnumerable<object> values, MetricTags tags)
+        private void Pack(string name, IEnumerable<string> columns, IEnumerable<object> values, MetricTags tags)
         {
-            this._data.Add (new InfluxDbRecord (name, columns, values, tags, _config));
+            _data.Add(new InfluxDbRecord(name, columns, values, tags, _config));
         }
 
-        protected override void StartReport (string contextName)
+        protected override void StartReport(string contextName)
         {
-            this._data = new List<InfluxDbRecord> ();
-            base.StartReport (contextName);
+            _data = new List<InfluxDbRecord>();
+            base.StartReport(contextName);
         }
 
-        protected override void EndReport (string contextName)
+        protected override void EndReport(string contextName)
         {
-            base.EndReport (contextName);
-            this._transport.Send (_data);
-            this._data = null;
+            base.EndReport(contextName);
+            _transport.Send(_data);
+            _data = null;
         }
 
-        protected override void ReportGauge (string name, double value, Unit unit, MetricTags tags)
+        protected override void ReportGauge(string name, double value, Unit unit, MetricTags tags)
         {
-            if (!double.IsNaN (value) && !double.IsInfinity (value)) {
-                Pack (name, value, tags);
+            if (!double.IsNaN(value) && !double.IsInfinity(value))
+            {
+                Pack(name, value, tags);
             }
         }
 
-        protected override void ReportCounter (string name, MetricData.CounterValue value, Unit unit, MetricTags tags)
+        protected override void ReportCounter(string name, MetricData.CounterValue value, Unit unit, MetricTags tags)
         {
-            if (!value.Items.Any ()) {
-                Pack (name, value.Count, tags);
+            if (!value.Items.Any())
+            {
+                Pack(name, value.Count, tags);
                 return;
             }
 
-            var cols = new List<string> (new [] { "total" });
-            cols.AddRange (value.Items.Select (x => x.Item));
+            var cols = new List<string>(new[] { "total" });
+            cols.AddRange(value.Items.Select(x => x.Item));
 
-            var data = new List<object> (new object[] { value.Count });
-            data.AddRange (value.Items.Select (x => (object)x.Count));
+            var data = new List<object>(new object[] { value.Count });
+            data.AddRange(value.Items.Select(x => (object)x.Count));
 
-            Pack (name, cols, data, tags);
+            Pack(name, cols, data, tags);
         }
 
-        protected override void ReportMeter (string name, MetricData.MeterValue value, Unit unit, TimeUnit rateUnit, MetricTags tags)
+        protected override void ReportMeter(string name, MetricData.MeterValue value, Unit unit, TimeUnit rateUnit, MetricTags tags)
         {
-            var cols = new [] { "count", "rate1m", "rate5m", "rate15m" };
-            var data = new object[] { value.Count, value.OneMinuteRate, value.FiveMinuteRate, value.FifteenMinuteRate };
+            var data = new Dictionary<string, object>();
 
-            Pack (name, cols, data, tags);
+            AddMeterValues(data, value);
+
+            var keys = data.Keys;
+            var values = data.Keys.Select(k => data[k]);
+
+            Pack(name, keys, values, tags);
         }
 
-        protected override void ReportHistogram (string name, MetricData.HistogramValue value, Unit unit, MetricTags tags)
+        protected override void ReportHistogram(string name, MetricData.HistogramValue value, Unit unit, MetricTags tags)
         {
-            var cols = new [] { "count", "last", "samples" }.ToList ();
-            var data = new object[] { value.Count, value.LastValue, value.SampleSize }.ToList ();
-        
-            if (value.LastUserValue != null) {
-                cols.Add ("user.last");
-                data.Add (value.LastUserValue);
-            }
+            var data = new Dictionary<string, object>
+            {
+                {"count", value.Count}, 
+                {"last", value.LastValue}, 
+                {"samples", value.SampleSize},
+            };
 
-            if (value.MinUserValue != null) {
-                cols.Add ("user.min");
-                data.Add (value.MinUserValue);
-            }
+            AddHistogramValues(data, value);
 
-            if (value.MaxUserValue != null) {
-                cols.Add ("user.max");
-                data.Add (value.MaxUserValue);            
-            }
+            var keys = data.Keys;
+            var values = data.Keys.Select(k => data[k]);
 
-            Pack (name, cols, data, tags);
+            Pack(name, keys, values, tags);
         }
 
-        protected override void ReportTimer (string name, MetricData.TimerValue value, Unit unit, TimeUnit rateUnit, TimeUnit durationUnit, MetricTags tags)
+        protected override void ReportTimer(string name, MetricData.TimerValue value, Unit unit, TimeUnit rateUnit, TimeUnit durationUnit, MetricTags tags)
         {
-            var cols = new [] { "count", "sessions", "rate1m", "rate5m", "rate15m", "samples" }.ToList ();
-            var data = new object[] { value.Rate.Count, value.ActiveSessions, value.Rate.OneMinuteRate, value.Rate.FiveMinuteRate, value.Rate.FifteenMinuteRate, value.Histogram.SampleSize }.ToList ();
+            var data = new Dictionary<string, object>();
 
-            if (value.Histogram.LastUserValue != null) {
-                cols.Add ("user.last");
-                data.Add (value.Histogram.LastUserValue);
-            }
+            AddMeterValues(data, value.Rate);
+            AddHistogramValues(data, value.Histogram);
 
-            if (value.Histogram.MinUserValue != null) {
-                cols.Add ("user.min");
-                data.Add (value.Histogram.MinUserValue);
-            }
+            var keys = data.Keys;
+            var values = data.Keys.Select(k => data[k]);
 
-            if (value.Histogram.MaxUserValue != null) {
-                cols.Add ("user.max");
-                data.Add (value.Histogram.MaxUserValue);
-            }
-
-            Pack (name, cols, data, tags);
+            Pack(name, keys, values, tags);
         }
 
-        protected override void ReportHealth (HealthStatus status)
+        private void AddMeterValues(IDictionary<string, object> values, MetricData.MeterValue meter)
+        {
+            values.Add("count", meter.Count);
+
+            values.Add("rate1m", meter.OneMinuteRate);
+            values.Add("rate5m", meter.FiveMinuteRate);
+            values.Add("rate15m", meter.FifteenMinuteRate);
+            values.Add("rateMean", meter.MeanRate);
+        }
+
+        private static void AddHistogramValues(IDictionary<string, object> values, MetricData.HistogramValue hist)
+        {
+            values.Add("samples", hist.SampleSize);
+            values.Add("count", hist.Count);
+            values.Add("min", hist.Min);
+            values.Add("max", hist.Max);
+            values.Add("mean", hist.Mean);
+            values.Add("median", hist.Median);
+            values.Add("stddev", hist.StdDev);
+            values.Add("p999", hist.Percentile999);
+            values.Add("p99", hist.Percentile99);
+            values.Add("p99", hist.Percentile98);
+            values.Add("p95", hist.Percentile95);
+            values.Add("p75", hist.Percentile75);
+
+            if (hist.LastUserValue != null)
+            {
+                values.Add("user.last", hist.LastUserValue);
+            }
+
+            if (hist.MinUserValue != null)
+            {
+                values.Add("user.min", hist.MinUserValue);
+            }
+
+            if (hist.MaxUserValue != null)
+            {
+                values.Add("user.max", hist.MaxUserValue);
+            }
+        }
+
+        protected override void ReportHealth(HealthStatus status)
         {
         }
     }

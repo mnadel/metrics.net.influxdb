@@ -2,8 +2,6 @@
 using Metrics.Reports;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using System.Dynamic;
-using System.Configuration;
 
 namespace Metrics.NET.InfluxDB
 {
@@ -15,21 +13,21 @@ namespace Metrics.NET.InfluxDB
         /// <summary>
         /// Push metrics into InfluxDB 0.9+
         /// </summary>
-        public static MetricsReports WithInflux (this MetricsReports reports, string host, int port, string user, string pass, string database, TimeSpan interval, ConfigOptions config = null)
+        public static MetricsReports WithInflux(this MetricsReports reports, string host, int port, string user, string pass, string database, TimeSpan interval, ConfigOptions config = null)
         {
-            var cfg = config ?? new ConfigOptions ();
+            var cfg = config ?? new ConfigOptions();
 
-            var uri = cfg.BuildUri (host, port, database);
+            var uri = cfg.BuildUri(host, port, database);
 
-            return reports.WithInflux (uri, user, pass, interval, cfg);
+            return reports.WithInflux(uri, user, pass, interval, cfg);
         }
 
         /// <summary>
         /// Push metrics into InfluxDB 0.9+
         /// </summary>
-        public static MetricsReports WithInflux (this MetricsReports reports, Uri influxdbUri, string username, string password, TimeSpan interval, ConfigOptions config = null)
+        public static MetricsReports WithInflux(this MetricsReports reports, Uri influxdbUri, string username, string password, TimeSpan interval, ConfigOptions config = null)
         {
-            return reports.WithReport (new InfluxDbReport (influxdbUri, username, password, config ?? new ConfigOptions ()), interval);
+            return reports.WithReport(new InfluxDbReport(influxdbUri, username, password, config ?? new ConfigOptions()), interval);
         }
     }
 
@@ -39,15 +37,23 @@ namespace Metrics.NET.InfluxDB
     public class ConfigOptions
     {
         private static readonly Regex NonWord = new Regex("[^a-zA-Z0-9\\.]+");
-            
+
+        /// <summary>
+        /// Export metric name as-is
+        /// </summary>
         public static readonly Func<string, string> IdentityConverter = name => name;
 
-        public static readonly Func<string, string> CompactConverter = name => {
-            if (name.StartsWith ("[", StringComparison.InvariantCultureIgnoreCase)) {
-                name = name.Substring (1);
+        /// <summary>
+        /// Compact and dot-ify metric name
+        /// </summary>
+        public static readonly Func<string, string> CompactConverter = name =>
+        {
+            if (name.StartsWith("[", StringComparison.InvariantCultureIgnoreCase))
+            {
+                name = name.Substring(1);
             }
 
-            return NonWord.Replace (name, ".").ToLower ();
+            return NonWord.Replace(name, ".").ToLower();
         };
 
         /// <summary>
@@ -110,17 +116,19 @@ namespace Metrics.NET.InfluxDB
                 "db="+database    
             };
 
-            if (!string.IsNullOrEmpty (RetentionPolicy)) {
-                parameters.Add ("rp="+RetentionPolicy);                
+            if (!string.IsNullOrEmpty(RetentionPolicy))
+            {
+                parameters.Add("rp=" + RetentionPolicy);
             }
 
-            if (!string.IsNullOrEmpty (Consistency)) {
-                parameters.Add ("consistency="+Consistency);                
+            if (!string.IsNullOrEmpty(Consistency))
+            {
+                parameters.Add("consistency=" + Consistency);
             }
 
-            var queryStringParams = string.Join ("&", parameters);
+            var queryStringParams = string.Join("&", parameters);
 
-            return new Uri(string.Format (@"{0}://{1}:{2}/write?{3}", UseHttps ? "https" : "http", host, port, queryStringParams));
+            return new Uri(string.Format(@"{0}://{1}:{2}/write?{3}", UseHttps ? "https" : "http", host, port, queryStringParams));
         }
     }
 }
