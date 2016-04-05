@@ -71,8 +71,8 @@ namespace Metrics.NET.InfluxDB
 
             AddMeterValues(data, value);
 
-            var keys = data.Keys;
-            var values = data.Keys.Select(k => data[k]);
+            var keys = data.Keys.ToList();
+            var values = keys.Select(k => data[k]);
 
             Pack(name, keys, values, tags);
         }
@@ -88,8 +88,8 @@ namespace Metrics.NET.InfluxDB
 
             AddHistogramValues(data, value);
 
-            var keys = data.Keys;
-            var values = data.Keys.Select(k => data[k]);
+            var keys = data.Keys.ToList();
+            var values = keys.Select(k => data[k]);
 
             Pack(name, keys, values, tags);
         }
@@ -101,16 +101,15 @@ namespace Metrics.NET.InfluxDB
             AddMeterValues(data, value.Rate);
             AddHistogramValues(data, value.Histogram);
 
-            var keys = data.Keys;
-            var values = data.Keys.Select(k => data[k]);
+            var keys = data.Keys.ToList();
+            var values = keys.Select(k => data[k]);
 
             Pack(name, keys, values, tags);
         }
 
-        private void AddMeterValues(IDictionary<string, object> values, MetricData.MeterValue meter)
+        private static void AddMeterValues(IDictionary<string, object> values, MetricData.MeterValue meter)
         {
             values.Add("count", meter.Count);
-
             values.Add("rate1m", meter.OneMinuteRate);
             values.Add("rate5m", meter.FiveMinuteRate);
             values.Add("rate15m", meter.FifteenMinuteRate);
