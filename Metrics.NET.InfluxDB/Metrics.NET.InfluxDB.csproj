@@ -47,6 +47,7 @@
     <Compile Include="InfluxDbRecord.cs" />
     <Compile Include="InfluxDbReport.cs" />
     <Compile Include="InfluxHttpTransport.cs" />
+    <Compile Include="MetricsDataCollectorExt.cs" />
     <Compile Include="Rate.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

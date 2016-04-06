@@ -69,7 +69,7 @@ namespace Metrics.NET.InfluxDB
         {
             var data = new Dictionary<string, object>();
 
-            AddMeterValues(data, value);
+            value.AddMeterValues(data);
 
             var keys = data.Keys.ToList();
             var values = keys.Select(k => data[k]);
@@ -81,7 +81,7 @@ namespace Metrics.NET.InfluxDB
         {
             var data = new Dictionary<string, object>();
 
-            AddHistogramValues(data, value);
+            value.AddHistogramValues(data);
 
             var keys = data.Keys.ToList();
             var values = keys.Select(k => data[k]);
@@ -93,54 +93,13 @@ namespace Metrics.NET.InfluxDB
         {
             var data = new Dictionary<string, object>();
 
-            AddMeterValues(data, value.Rate);
-            AddHistogramValues(data, value.Histogram);
+            value.Rate.AddMeterValues(data);
+            value.Histogram.AddHistogramValues(data);
 
             var keys = data.Keys.ToList();
             var values = keys.Select(k => data[k]);
 
             Pack(name, keys, values, tags);
-        }
-
-        private static void AddMeterValues(IDictionary<string, object> values, MetricData.MeterValue meter)
-        {
-            values.Add("count.meter", meter.Count);
-            values.Add("rate1m", meter.OneMinuteRate);
-            values.Add("rate5m", meter.FiveMinuteRate);
-            values.Add("rate15m", meter.FifteenMinuteRate);
-            values.Add("rate.mean", meter.MeanRate);
-        }
-
-        private static void AddHistogramValues(IDictionary<string, object> values, MetricData.HistogramValue hist)
-        {
-            values.Add("samples", hist.SampleSize);
-            values.Add("last", hist.LastValue);
-            values.Add("count.hist", hist.Count);
-            values.Add("min", hist.Min);
-            values.Add("max", hist.Max);
-            values.Add("mean", hist.Mean);
-            values.Add("median", hist.Median);
-            values.Add("stddev", hist.StdDev);
-            values.Add("p999", hist.Percentile999);
-            values.Add("p99", hist.Percentile99);
-            values.Add("p98", hist.Percentile98);
-            values.Add("p95", hist.Percentile95);
-            values.Add("p75", hist.Percentile75);
-
-            if (hist.LastUserValue != null)
-            {
-                values.Add("user.last", hist.LastUserValue);
-            }
-
-            if (hist.MinUserValue != null)
-            {
-                values.Add("user.min", hist.MinUserValue);
-            }
-
-            if (hist.MaxUserValue != null)
-            {
-                values.Add("user.max", hist.MaxUserValue);
-            }
         }
 
         protected override void ReportHealth(HealthStatus status)
