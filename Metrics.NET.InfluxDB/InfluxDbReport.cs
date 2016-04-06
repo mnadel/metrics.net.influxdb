@@ -79,12 +79,7 @@ namespace Metrics.NET.InfluxDB
 
         protected override void ReportHistogram(string name, MetricData.HistogramValue value, Unit unit, MetricTags tags)
         {
-            var data = new Dictionary<string, object>
-            {
-                {"count", value.Count}, 
-                {"last", value.LastValue}, 
-                {"samples", value.SampleSize},
-            };
+            var data = new Dictionary<string, object>();
 
             AddHistogramValues(data, value);
 
@@ -109,17 +104,18 @@ namespace Metrics.NET.InfluxDB
 
         private static void AddMeterValues(IDictionary<string, object> values, MetricData.MeterValue meter)
         {
-            values.Add("count", meter.Count);
+            values.Add("count.meter", meter.Count);
             values.Add("rate1m", meter.OneMinuteRate);
             values.Add("rate5m", meter.FiveMinuteRate);
             values.Add("rate15m", meter.FifteenMinuteRate);
-            values.Add("rateMean", meter.MeanRate);
+            values.Add("rate.mean", meter.MeanRate);
         }
 
         private static void AddHistogramValues(IDictionary<string, object> values, MetricData.HistogramValue hist)
         {
             values.Add("samples", hist.SampleSize);
-            values.Add("count", hist.Count);
+            values.Add("last", hist.LastValue);
+            values.Add("count.hist", hist.Count);
             values.Add("min", hist.Min);
             values.Add("max", hist.Max);
             values.Add("mean", hist.Mean);
@@ -127,7 +123,7 @@ namespace Metrics.NET.InfluxDB
             values.Add("stddev", hist.StdDev);
             values.Add("p999", hist.Percentile999);
             values.Add("p99", hist.Percentile99);
-            values.Add("p99", hist.Percentile98);
+            values.Add("p98", hist.Percentile98);
             values.Add("p95", hist.Percentile95);
             values.Add("p75", hist.Percentile75);
 
