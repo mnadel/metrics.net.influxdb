@@ -2,3 +2,6 @@ version: 2.0.{build}-beta
 branches:
     only:
         - master
+artifacts:
+  - path: *.nupkg
+    name: Nupkg
