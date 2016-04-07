@@ -5,3 +5,6 @@ branches:
 artifacts:
   - path: '*.nupkg'
     name: Nupkg
+
+before_build: 'nuget restore Metrics.NET.InfluxDB.sln'
+after_build: 'nuget pack Metrics.NET.InfluxDB.nuspec -BasePath Metrics.Net.InfluxDB\bin\Debug -Version %APPVEYOR_BUILD_VERSION%'
