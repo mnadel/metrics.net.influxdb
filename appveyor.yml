@@ -3,5 +3,5 @@ branches:
     only:
         - master
 artifacts:
-  - path: *.nupkg
+  - path: '*.nupkg'
     name: Nupkg
