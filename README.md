@@ -6,10 +6,6 @@
 
 Available on [NuGet.org](https://www.nuget.org/packages/Metrics.NET.InfluxDB/) as [Metrics.NET.InfluxDB](https://www.nuget.org/packages/Metrics.NET.InfluxDB/).
 
-# Changelog
-
-This version has significant *(i.e. breaking)* changes from the previous version. Most derived metrics (min, max, mean, percentiles, etc.) are no longer being exported. InfluxDB recommended using, instead, [continuous queries](https://influxdb.com/docs/v0.9/query_language/continuous_queries.html) on the backend to calculate these values.
-
 # Usage
 
 Nearly identical to the usage shown in the [Metrics.NET Wiki](https://github.com/etishor/Metrics.NET/wiki/InfluxDb), but using `WithInflux` instead of `WithInfluxDb`:
@@ -45,7 +41,7 @@ Example:
 
 ## License
 
-This library will always keep the same license as [Metrics.NET](https://github.com/etishor/Metrics.NET) (as long as its an open source, permisive license). This port is inspired by and contains some code from [Metrics.NET](https://github.com/etishor/Metrics.NET).
+This library will always keep the same license as [Metrics.NET](https://github.com/Recognos/Metrics.NET) (as long as its an open source, permisive license). This port is inspired by and contains some code from [Metrics.NET](https://github.com/Recognos/Metrics.NET).
 
 This library (Metrics.NET.InfluxDB) is release under Apache 2.0 License (see LICENSE).
 

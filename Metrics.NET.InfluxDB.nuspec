@@ -11,7 +11,7 @@
         <description>This library provides a Report that pushes Metrics.NET data into InfluxDB 0.9+</description>
         <copyright>Michael Nadel</copyright>
         <dependencies>
-            <dependency id="Metrics.NET" version="0.2.16" />
+            <dependency id="Metrics.NET" version="0.3.4-pre" />
             <dependency id="Polly" version="4.1.2" />
         </dependencies>
     </metadata>

@@ -6,14 +6,11 @@ using System.Linq;
 using System.Text;
 using System.Net.Http.Headers;
 using System.Threading;
-using Metrics.Logging;
 
 namespace Metrics.NET.InfluxDB
 {
     internal class InfluxDbHttpTransport
     {
-        private static readonly ILog log = LogProvider.GetCurrentClassLogger();
-
         private readonly HttpClient _client;
         private readonly Policy _policy;
         private readonly Uri _uri;
@@ -39,14 +36,6 @@ namespace Metrics.NET.InfluxDB
 
         internal void Send(IEnumerable<InfluxDbRecord> records)
         {
-            if (_config.Verbose)
-            {
-                foreach (var rec in records)
-                {
-                    log.DebugFormat("posting: {0}", rec.LineProtocol);
-                }
-            }
-
             _policy.ExecuteAndCapture(() =>
             {
                 var content = string.Join("\n", records.Select(d => d.LineProtocol));
@@ -84,15 +73,16 @@ namespace Metrics.NET.InfluxDB
                     cts.Cancel();
                     Metric.Context("Metrics.NET").Meter("influxdb.error.meter", Unit.Events).Mark();
 
+                    var exToReport = e;
+
                     var agg = e as AggregateException;
                     if (agg != null)
                     {
-                        log.ErrorException(agg.InnerException.Message, agg.InnerException);
+                        exToReport = agg;
                     }
-                    else
-                    {
-                        log.ErrorException(e.InnerException.Message, e.InnerException);
-                    }
+
+                    var msg = string.Format("{0}\n{1}", exToReport.InnerException.Message, exToReport.InnerException);
+                    Metric.Context("Metrics.NET").Histogram("influxdb.errors", Unit.Events).Update(1, msg);
 
                     throw;
                 }
