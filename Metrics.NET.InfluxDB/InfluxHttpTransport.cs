@@ -36,7 +36,19 @@ namespace Metrics.NET.InfluxDB
 
         internal void Send(IEnumerable<InfluxDbRecord> records)
         {
-            _policy.ExecuteAndCapture(() =>
+            try
+            {
+                TrySend(records);
+            }
+            catch
+            {
+                // suppress errors
+            }
+        }
+
+        internal PolicyResult TrySend(IEnumerable<InfluxDbRecord> records)
+        {
+            return _policy.ExecuteAndCapture(() =>
             {
                 var content = string.Join("\n", records.Select(d => d.LineProtocol));
 
@@ -79,9 +91,13 @@ namespace Metrics.NET.InfluxDB
                     if (agg != null)
                     {
                         exToReport = agg;
+                        if (agg.InnerException != null)
+                        {
+                            exToReport = agg.InnerException;
+                        }
                     }
 
-                    var msg = string.Format("{0}\n{1}", exToReport.InnerException.Message, exToReport.InnerException);
+                    var msg = string.Format("{0}\n{1}", exToReport.Message, exToReport.StackTrace);
                     Metric.Context("Metrics.NET").Histogram("influxdb.errors", Unit.Events).Update(1, msg);
 
                     throw;
